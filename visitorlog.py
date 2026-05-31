@@ -2743,19 +2743,8 @@ def show_settings_screen(root, main_frame, sidebar_nav=None):
     info_row(ab, "🏢  Office",      "Barangay Records Office")
     info_row(ab, "👤  Managed By",  "Barangay Officials & Staff")
     info_row(ab, "📋  System Name", "Barangay Visitor Log System")
-    info_row(ab, "💾  Version",     "2.0")
-    info_row(ab, "📅  Year",        "2025")
+    info_row(ab, "📅  Year",        "2026")
 
-    # ── Technical card ───────────────────────────────────────
-    tech = dk_card(body_inner,
-                   title="🛠  Technical Information",
-                   subtitle="Stack and environment details")
-
-    info_row(tech, "🐍  Language",   "Python 3")
-    info_row(tech, "🖼  UI Library", "Tkinter (built-in)")
-    info_row(tech, "🗄  Database",   "SQLite3  —  barangay_visitors.db")
-    info_row(tech, "📦  Packaging",  "PyInstaller (for .exe build)")
-    info_row(tech, "🖥  Platform",   "Windows / Cross-platform")
 
     # ── Features card ────────────────────────────────────────
     feat = dk_card(body_inner,
@@ -2767,10 +2756,12 @@ def show_settings_screen(root, main_frame, sidebar_nav=None):
         "Track purpose of visit and person to see",
         "Admin panel with full visitor records",
         "Search and filter visitor logs",
-        "Export records to text file",
+        "Export records to Excel and PDF",
         "Analytics dashboard with charts",
         "Auto logout after 5 minutes of inactivity",
         "Password-protected admin access",
+        "Automatic offline database backups",
+        "Built with Python, Tkinter, and SQLite"
     ]
     for feat_text in features:
         row = tk.Frame(feat, bg=DK_SURFACE)
@@ -2794,98 +2785,7 @@ def show_settings_screen(root, main_frame, sidebar_nav=None):
         tk.Label(dev, text=line, font=("Segoe UI", 9),
                  bg=DK_SURFACE, fg=DK_TEXT, anchor="w").pack(fill="x", pady=1)
 
-    # ── Backup Management card ───────────────────────────────
-    bk = dk_card(body_inner,
-                 title="💾  Database Backup",
-                 subtitle="Automatic offline backup to AppData\\Local\\BarangayVisitorLog\\backups")
-
-    # Backup path display
-    path_row = tk.Frame(bk, bg=DK_SURFACE)
-    path_row.pack(fill="x", pady=(0, 10))
-    tk.Label(path_row, text="📂  Backup Folder:",
-             font=("Segoe UI", 9, "bold"), bg=DK_SURFACE, fg=DK_MUTED,
-             width=18, anchor="w").pack(side="left")
-    tk.Label(path_row, text=BACKUP_DIR,
-             font=("Segoe UI", 8), bg=DK_SURFACE, fg=DK_TEXT,
-             wraplength=480, justify="left").pack(side="left")
-
-    # Status label
-    status_var = tk.StringVar(value="")
-    status_lbl = tk.Label(bk, textvariable=status_var,
-                          font=("Segoe UI", 8, "italic"),
-                          bg=DK_SURFACE, fg=C_GREEN, anchor="w")
-    status_lbl.pack(fill="x", pady=(0, 10))
-
-    # Buttons row
-    btn_row = tk.Frame(bk, bg=DK_SURFACE)
-    btn_row.pack(fill="x", pady=(0, 14))
-
-    def do_manual_backup():
-        ok, msg = auto_backup_database(silent=True)
-        status_var.set("✔ " + msg.split("\n")[0] if ok else "✘ " + msg)
-        status_lbl.config(fg=C_GREEN if ok else C_RED_ACCENT)
-        refresh_backup_list()
-
-    manual_btn = RoundedButton(btn_row, text="💾  Backup Now",
-                               bg=C_RED_ACCENT, activebackground=C_RED_DARK,
-                               min_width=160, command=do_manual_backup)
-    manual_btn.pack(side="left", padx=(0, 10))
-
-    def open_backup_folder():
-        folder = get_backup_dir()
-        try:
-            os.startfile(folder)
-        except Exception:
-            import subprocess
-            subprocess.Popen(["xdg-open", folder])
-
-    open_btn = RoundedButton(btn_row, text="📂  Open Folder",
-                             bg=DK_RED, activebackground=C_RED_DARK,
-                             min_width=160, command=open_backup_folder)
-    open_btn.pack(side="left")
-
-    # ── Backup list ──────────────────────────────────────────
-    tk.Frame(bk, bg=DK_BORDER, height=1).pack(fill="x", pady=(6, 12))
-    tk.Label(bk, text="Recent Backups  (max 7 kept)",
-             font=("Segoe UI", 9, "bold"), bg=DK_SURFACE, fg=DK_TEXT).pack(anchor="w", pady=(0, 6))
-
-    list_frame = tk.Frame(bk, bg=DK_SURFACE)
-    list_frame.pack(fill="x")
-
-    backup_rows = []   # keep refs
-
-    def refresh_backup_list():
-        for w in list_frame.winfo_children():
-            w.destroy()
-        backup_rows.clear()
-        backups = get_backup_list()
-        if not backups:
-            tk.Label(list_frame, text="No backups found yet.",
-                     font=("Segoe UI", 8, "italic"),
-                     bg=DK_SURFACE, fg=DK_MUTED).pack(anchor="w")
-            return
-        for i, (fname, fpath, size_kb, modified) in enumerate(backups):
-            row_bg = DK_SURFACE if i % 2 == 0 else DK_SURFACE2
-            row = tk.Frame(list_frame, bg=row_bg, pady=4)
-            row.pack(fill="x")
-
-            info_col = tk.Frame(row, bg=row_bg)
-            info_col.pack(side="left", fill="x", expand=True, padx=(4, 0))
-
-            tk.Label(info_col, text=f"  {modified}",
-                     font=("Segoe UI", 8, "bold"), bg=row_bg, fg=DK_TEXT).pack(anchor="w")
-            tk.Label(info_col, text=f"  {fname}   ({size_kb:.1f} KB)",
-                     font=("Segoe UI", 7), bg=row_bg, fg=DK_MUTED).pack(anchor="w")
-
-            restore_btn = RoundedButton(row, text="Restore",
-                                        bg=C_RED_DARK, activebackground=C_RED_ACCENT,
-                                        font=("Segoe UI", 8, "bold"),
-                                        min_width=80,
-                                        command=lambda p=fpath: restore_backup(p, parent=root))
-            restore_btn.pack(side="right", padx=8)
-            backup_rows.append(row)
-
-    refresh_backup_list()
+   
 
     # Spacer at bottom
     tk.Frame(body_inner, bg=DK_BG, height=40).pack()
